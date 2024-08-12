@@ -15,6 +15,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -93,4 +94,13 @@ class CashCardApplicationTests {
 		assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.0, 150.00);
 	}
 
+	@Test
+	void shouldReturnAPageOfCashCards() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/cashcards?page=0&size=1", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		List<Map<String, Object>> page = documentContext.read("$[*]", List.class);
+		assertThat(page.size()).isEqualTo(1);
+	}
 }
