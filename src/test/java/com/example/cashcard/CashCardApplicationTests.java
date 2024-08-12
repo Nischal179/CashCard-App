@@ -2,6 +2,8 @@ package com.example.cashcard;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import org.json.JSONArray;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,13 +14,14 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 // This will start our Spring Boot application and make it available for our test
 // to perform requests to it.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CashCardApplicationTests {
 
 	@Autowired
@@ -53,7 +56,7 @@ class CashCardApplicationTests {
 	}
 
 	@Test
-		//@DirtiesContext
+	@DirtiesContext
 	void shouldCreateANewCashCard() {
 		CashCard newCashCard = new CashCard(null, 250.00);
 		ResponseEntity<Void> createResponse = restTemplate.postForEntity("/cashcards", newCashCard, Void.class);
@@ -75,5 +78,19 @@ class CashCardApplicationTests {
 	void shouldReturnAllCashCardsWhenListIsRequested() {
 		ResponseEntity<String> response = restTemplate.getForEntity("/cashcards", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		// documentContext.read("$.length()") calculates the length of the array.
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		int cashCardCount = documentContext.read("$.length()");
+		assertThat(cashCardCount).isEqualTo(3);
+
+		// .read("$..id") retrieves the list of all id values returned, while .read("$..amount") collects all amounts
+		// returned.
+		List<Integer> ids = documentContext.read("$..id", List.class);
+		assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
+
+		List<Double> amounts = documentContext.read("$..amount", List.class);
+		assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.0, 150.00);
 	}
+
 }
