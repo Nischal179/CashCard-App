@@ -103,4 +103,20 @@ class CashCardApplicationTests {
 		List<Map<String, Object>> page = documentContext.read("$[*]", List.class);
 		assertThat(page.size()).isEqualTo(1);
 	}
+
+	@Test
+	void shouldReturnASortedPageOfCashCards() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/cashcards?page=0&size=1&sort=amount,desc", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+		// Use List instead of JSONArray
+		List<Object> read = documentContext.read("$[*]");
+		assertThat(read.size()).isEqualTo(1);
+
+		// Reading the amount directly
+		double amount = documentContext.read("$[0].amount", Double.class);
+		assertThat(amount).isEqualTo(150.00);
+	}
 }
